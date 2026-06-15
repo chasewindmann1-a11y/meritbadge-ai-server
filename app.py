@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 
-AI_KEY = os.getenv("AI_KEY")  # Parent adds this in Render dashboard
+AI_KEY = os.getenv("AI_KEY")
 
 
 @app.route("/requirements")
@@ -14,10 +14,9 @@ def get_requirements():
     if not badge:
         return jsonify({"error": "No badge provided"}), 400
 
-    # Build the official BSA URL
-    url = f"https://www.scouting.org/merit-badges/{badge.replace(' ', '-').lower()}/"
+    # Use USScouts mirror (much more reliable)
+    url = f"https://usscouts.org/mb/mb-{badge.replace(' ', '').lower()}.asp"
 
-    # Fetch the page with a browser-like User-Agent
     try:
         page = requests.get(
             url,
@@ -29,7 +28,7 @@ def get_requirements():
     if page.status_code != 200:
         return jsonify({"requirements": ["Could not load official requirements."]})
 
-    # Call OpenAI to extract requirements
+    # AI extraction
     try:
         ai_response = requests.post(
             "https://api.openai.com/v1/chat/completions",
@@ -42,7 +41,7 @@ def get_requirements():
                 "messages": [
                     {
                         "role": "system",
-                        "content": "Extract the official merit badge requirements as a clean numbered list."
+                        "content": "Extract the merit badge requirements as a clean numbered list."
                     },
                     {
                         "role": "user",
@@ -53,8 +52,6 @@ def get_requirements():
         )
 
         data = ai_response.json()
-
-        # Extract text from AI response
         text = data["choices"][0]["message"]["content"]
         lines = [line.strip() for line in text.split("\n") if line.strip()]
 
@@ -67,7 +64,3 @@ def get_requirements():
 @app.route("/")
 def home():
     return "Merit Badge AI Server is running."
-
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
