@@ -15,7 +15,11 @@ def get_requirements():
 
     # 1. Fetch official BSA merit badge page
     url = f"https://www.scouting.org/merit-badges/{badge.replace(' ', '-').lower()}/"
-    page = requests.get(url)
+    page = requests.get(
+    url,
+    headers={"User-Agent": "Mozilla/5.0"}
+)
+
 
     if page.status_code != 200:
         return jsonify({"requirements": ["Could not load official requirements."]})
